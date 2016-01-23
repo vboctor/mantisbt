@@ -705,10 +705,13 @@ function bugnote_stats_get_project_array( $p_project_id, $p_from, $p_to, $p_cost
 	}
 
 	if( ALL_PROJECTS != $p_project_id ) {
+		access_ensure_project_level( config_get( 'view_bug_threshold' ), $p_project_id );
+
 		$t_project_where = ' AND b.project_id = ' . db_param() . ' AND bn.bug_id = b.id ';
 		$t_params[] = $p_project_id;
 	} else {
-		$t_project_where = '';
+		$t_project_ids = current_user_get_accessible_projects();
+		$t_project_where = ' AND b.project_id in (' . implode( ', ', $t_project_ids ). ')';
 	}
 
 	if( !is_blank( $c_from ) ) {
