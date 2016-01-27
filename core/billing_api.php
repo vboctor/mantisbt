@@ -49,7 +49,7 @@ function billing_ensure_reporting_access( $p_project_id = null, $p_user_id = nul
 /**
  * Gets the billing information for the specified project during the specified date range.
  * 
- * @param integer $p_project_id    A project identifier.
+ * @param integer $p_project_id    A project identifier or ALL_PROJECTS.
  * @param string  $p_from          Starting date (yyyy-mm-dd) inclusive, if blank, then ignored.
  * @param string  $p_to            Ending date (yyyy-mm-dd) inclusive, if blank, then ignored.
  * @param integer $p_cost_per_hour Cost per hour.
@@ -103,6 +103,10 @@ function billing_get_for_project( $p_project_id, $p_from, $p_to, $p_cost_per_hou
 	$t_cost_per_min = $p_cost_per_hour / 60.0;
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
+		if ( !access_has_bugnote_level( VIEWER, $t_row['id'] ) ) {
+			continue;
+		}
+
 		$t_total_cost = $t_cost_per_min * $t_row['minutes'];
 		$t_row['cost'] = $t_total_cost;
 		$t_results[] = $t_row;
@@ -110,6 +114,83 @@ function billing_get_for_project( $p_project_id, $p_from, $p_to, $p_cost_per_hou
 
 	$t_billing_rows = billing_rows_to_array( $t_results );
 	return $t_billing_rows;
+}
+
+/**
+ * Gets the billing summary for the specified project and the date range.
+ *
+ * @param integer $p_project_id    A project identifier or ALL_PROJECTS.
+ * @param string  $p_from          Starting date (yyyy-mm-dd) inclusive, if blank, then ignored.
+ * @param string  $p_to            Ending date (yyyy-mm-dd) inclusive, if blank, then ignored.
+ * @param integer $p_cost_per_hour Cost per hour.
+ * @return array The contains billing data grouped by issues, users, and total information.
+ * @access public
+ */
+function billing_get_summaries( $p_project_id, $p_from, $p_to, $p_cost_per_hour ) {
+	$t_rows = billing_get_for_project( $p_project_id, $p_from, $p_to, $p_cost_per_hour );
+
+	$t_issues = array();
+	$t_users = array();
+
+	foreach ( $t_rows as $t_row ) {
+		extract( $t_row, EXTR_PREFIX_ALL, 'v' );
+
+		$t_username = user_get_name( $v_reporter_id );
+
+		if( !isset( $t_users[$t_username] ) ) {
+			$t_users[$t_username]['minutes'] = 0;
+			$t_users[$t_username]['cost'] = 0;
+		}
+
+		$t_users[$t_username]['minutes'] += $v_minutes;
+
+		if( !isset( $t_issues[$v_bug_id] ) ) {
+			$t_issues[$v_bug_id] = $t_row;
+			$t_issues[$v_bug_id]['summary'] = $v_bug_summary;
+			$t_issues[$v_bug_id]['users'] = array();
+			$t_issues[$v_bug_id]['minutes'] = 0;
+			$t_issues[$v_bug_id]['cost'] = 0;
+		}
+
+		if( !isset( $t_issues[$v_bug_id][$t_username] ) ) {
+			$t_issues[$v_bug_id]['users'][$t_username]['minutes'] = 0;
+			$t_issues[$v_bug_id]['users'][$t_username]['cost'] = 0;
+		}
+
+		$t_issues[$v_bug_id]['minutes'] += $v_minutes;
+		$t_issues[$v_bug_id]['users'][$t_username]['minutes'] += $v_minutes;
+	}
+
+	$t_total = array(
+		'minutes' => 0,
+		'cost' => 0,
+	);
+
+	foreach( $t_issues as $t_id => $t_info ) {
+		$t_cost = $t_info['minutes'] * $p_cost_per_hour / 60;
+		$t_issues[$t_id]['cost'] = $t_cost;
+		$t_total['cost'] += $t_cost;
+		$t_total['minutes'] += $t_info['minutes'];
+
+		foreach( $t_info['users'] as $t_username => $t_user_info ) {
+			$t_issues[$t_id]['users'][$t_username]['cost'] =
+				$t_user_info['minutes'] * $p_cost_per_hour / 60;
+		}
+
+		ksort( $t_issues[$t_id]['users'] );
+	}
+
+	foreach( $t_users as $t_username => $t_info ) {
+		$t_users[$t_username]['cost'] = $t_info['minutes'] * $p_cost_per_hour / 60;
+	}
+
+	ksort( $t_users );
+	ksort( $t_issues );
+
+	return array(
+		'issues' => $t_issues,
+		'users' => $t_users,
+		'total' => $t_total );
 }
 
 /**
