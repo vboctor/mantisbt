@@ -72,7 +72,7 @@ function billing_get_for_project( $p_project_id, $p_from, $p_to, $p_cost_per_hou
 		$t_project_where = ' AND b.project_id = ' . db_param() . ' AND bn.bug_id = b.id ';
 		$t_params[] = $p_project_id;
 	} else {
-		$t_project_ids = current_user_get_accessible_projects();
+		$t_project_ids = user_get_all_accessible_projects();
 		$t_project_where = ' AND b.project_id in (' . implode( ', ', $t_project_ids ). ')';
 	}
 
