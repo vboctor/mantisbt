@@ -195,12 +195,12 @@ if( ON == config_get( 'time_tracking_with_billing' ) ) {
 
 	</tr>
 <?php
-		foreach ( $t_bugnote_stats['issues'] as $t_item ) {
-			$t_project_info = ( !isset( $f_bug_id ) && $f_project_id == ALL_PROJECTS ) ? '[' . project_get_name( $t_item['project_id'] ) . ']' . lang_get( 'word_separator' ) : '';
-			$t_link = sprintf( lang_get( 'label' ), string_get_bug_view_link( $t_item['bug_id'] ) ) . lang_get( 'word_separator' ) . $t_project_info . string_display( $t_item['summary'] );
+		foreach ( $t_bugnote_stats['issues'] as $t_issue_id => $t_issue ) {
+			$t_project_info = ( !isset( $f_bug_id ) && $f_project_id == ALL_PROJECTS ) ? '[' . project_get_name( $t_issue['project_id'] ) . ']' . lang_get( 'word_separator' ) : '';
+			$t_link = sprintf( lang_get( 'label' ), string_get_bug_view_link( $t_issue_id ) ) . lang_get( 'word_separator' ) . $t_project_info . string_display( $t_issue['summary'] );
 			echo '<tr class="row-category-history"><td colspan="4">' . $t_link . '</td></tr>';
 
-			foreach( $t_item['users'] as $t_username => $t_user_info ) {
+			foreach( $t_issue['users'] as $t_username => $t_user_info ) {
 ?>
 	<tr>
 		<td class="small-caption">
