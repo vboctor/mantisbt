@@ -624,6 +624,8 @@ $s_vote_added_msg = 'Vote has been added...';
 
 # bugnote_add.php
 $s_bugnote_added_msg = 'Note added...';
+$s_bugnote_add_action = 'add a note on:';
+$s_bugnote_add_subject = '%1$s';
 
 # bugnote_delete.php
 $s_bugnote_deleted_msg = 'Note has been successfully deleted...';

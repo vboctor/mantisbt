@@ -858,13 +858,23 @@ function email_bug_updated( $p_bug_id ) {
 }
 
 /**
- * send notices when a new bugnote
- * @param int $p_bug_id
+ * Send notices when a new bugnote
+ * @param int $p_bug_id The bug id
+ * @param string The content of the note.
  * @return null
  */
-function email_bugnote_add( $p_bug_id ) {
+function email_bugnote_add( $p_bug_id, $p_message ) {
 	log_event( LOG_EMAIL, sprintf( 'Note added to issue #%d', $p_bug_id ) );
-	email_generic( $p_bug_id, 'bugnote', 'email_notification_title_for_action_bugnote_submitted' );
+
+	$t_recipients = email_collect_recipients( $p_bug_id, 'bugnote' );
+	$t_user_ids = array_keys( $t_recipients );
+
+	return email_user_message(
+		$p_bug_id,
+		$t_user_ids,
+		'bugnote_add_subject',
+		'bugnote_add_action',
+		$p_message );
 }
 
 /**
@@ -1330,9 +1340,35 @@ function email_bug_reminder( $p_recipients, $p_bug_id, $p_message ) {
  * @return array List of users ids to whom the reminder e-mail was actually sent
  */
 function email_user_mention( $p_bug_id, $p_mention_user_ids, $p_message, $p_removed_mention_user_ids = array() ) {
+	return email_user_message(
+		$p_bug_id,
+		$p_mention_user_ids,
+		'mentioned_in',
+		'mentioned_you',
+		$p_message,
+		$p_removed_mention_user_ids );
+}
+
+/**
+ * Send a notification to user or set of users that were mentioned in an issue
+ * or an issue note.
+ *
+ * @param integer       $p_bug_id     Issue for which the reminder is sent.
+ * @param array         $p_user_ids   User id or list of user ids array.
+ * @param string        $p_subject_lang_string The string used in the subject accepting parameter for issue subject.
+ * @param string        p_action_lang_string The string used above the message for action.
+ * @param string        $p_message    Optional message to add to the e-mail.
+ * @param array         $p_removed_user_ids  The users that were removed due to lack of access.
+ * @return array List of users ids to whom the reminder e-mail was actually sent
+ */
+function email_user_message( $p_bug_id, $p_user_ids, $p_subject_lang_string, $p_action_lang_string, $p_message, $p_removed_user_ids = array() ) {
 	if( OFF == config_get( 'enable_email_notification' ) ) {
 		log_event( LOG_EMAIL_VERBOSE, 'email notifications disabled.' );
 		return array();
+	}
+
+	foreach( $p_removed_user_ids as $t_removed_user_id ) {
+		log_event( LOG_EMAIL_VERBOSE, 'skipped email for U' . $t_removed_user_id . ' (access denied).' );
 	}
 
 	$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
@@ -1340,54 +1376,49 @@ function email_user_mention( $p_bug_id, $p_mention_user_ids, $p_message, $p_remo
 	$t_sender = user_get_name( $t_sender_id );
 
 	$t_subject = email_build_subject( $p_bug_id );
-	$t_subject = sprintf( lang_get( 'mentioned_in' ), $t_subject );
+	$t_subject = sprintf( lang_get( $p_subject_lang_string ), $t_subject );
 	$t_date = date( config_get( 'normal_date_format' ) );
-	$t_user_id = auth_get_current_user_id();
 	$t_users_processed = array();
 
-	foreach( $p_removed_mention_user_ids as $t_removed_mention_user_id ) {
-		log_event( LOG_EMAIL_VERBOSE, 'skipped mention email for U' . $t_removed_mention_user_id . ' (no access to issue or note).' );
-	}
-
 	$t_result = array();
-	foreach( $p_mention_user_ids as $t_mention_user_id ) {
+	foreach( $p_user_ids as $t_user_id ) {
 		# Don't trigger mention emails for self mentions
-		if( $t_mention_user_id == $t_user_id ) {
-			log_event( LOG_EMAIL_VERBOSE, 'skipped mention email for U' . $t_mention_user_id . ' (self-mention).' );
+		if( $t_user_id == $t_sender_id ) {
+			log_event( LOG_EMAIL_VERBOSE, 'skipped mention email for U' . $t_sender_id . ' (own action).' );
 			continue;
 		}
 
 		# Don't process a user more than once
-		if( isset( $t_users_processed[$t_mention_user_id] ) ) {
+		if( isset( $t_users_processed[$t_user_id] ) ) {
 			continue;
 		}
 
-		$t_users_processed[$t_mention_user_id] = true;
+		$t_users_processed[$t_user_id] = true;
 
 		# Don't email mention notifications to disabled users.
-		if( !user_is_enabled( $t_mention_user_id ) ) {
+		if( !user_is_enabled( $t_user_id ) ) {
 			continue;
 		}
 
-		lang_push( user_pref_get_language( $t_mention_user_id, $t_project_id ) );
+		lang_push( user_pref_get_language( $t_user_id, $t_project_id ) );
 
-		$t_email = user_get_email( $t_mention_user_id );
+		$t_email = user_get_email( $t_user_id );
 
-		if( access_has_project_level( config_get( 'show_user_email_threshold' ), $t_project_id, $t_mention_user_id ) ) {
+		if( access_has_project_level( config_get( 'show_user_email_threshold' ), $t_project_id, $t_user_id ) ) {
 			$t_sender_email = ' <' . user_get_email( $t_sender_id ) . '>';
 		} else {
 			$t_sender_email = '';
 		}
 
-		$t_header = "\n" . lang_get( 'on_date' ) . ' ' . $t_date . ', ' . $t_sender . ' ' . $t_sender_email . lang_get( 'mentioned_you' ) . "\n\n";
+		$t_header = "\n" . lang_get( 'on_date' ) . ' ' . $t_date . ', ' . $t_sender . ' ' . $t_sender_email . lang_get( $p_action_lang_string ) . "\n\n";
 		$t_contents = $t_header . string_get_bug_view_url_with_fqdn( $p_bug_id ) . " \n\n" . $p_message;
 
 		$t_id = email_store( $t_email, $t_subject, $t_contents );
 		if( $t_id !== null ) {
-			$t_result[] = $t_mention_user_id;
+			$t_result[] = $t_user_id;
 		}
 
-		log_event( LOG_EMAIL_VERBOSE, 'queued mention email ' . $t_id . ' for U' . $t_mention_user_id );
+		log_event( LOG_EMAIL_VERBOSE, 'queued email ' . $t_id . ' for U' . $t_user_id );
 
 		lang_pop();
 	}
