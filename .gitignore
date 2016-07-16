@@ -21,6 +21,7 @@ docbook/*/tmp
 /build/
 /node_modules/
 /vendor/
+npm-debug.log
 
 # Untracked plugins
 plugins/*
