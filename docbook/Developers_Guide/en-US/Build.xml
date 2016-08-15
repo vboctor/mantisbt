@@ -7,7 +7,7 @@
 	<title>MantisBT Build</title>
 
 	<para>
-		MantisBT source code leverages the <ulink url="http://gulpjs.com/">Gulp</ulink> build system
+		MantisBT source code leverages the <ulink url="http://gulpjs.com/">npm</ulink> tool
 		as the task runner and tool that is used to express the different workflows needed to develop,
 		run, and publish MantisBT.
 	</para>
@@ -63,7 +63,6 @@
 
 		<programlisting>
 			Install Node JS: https://nodejs.org/en/
-			Install Gulp: npm install --global gulp-cli
 		</programlisting>
 	</section>
 
