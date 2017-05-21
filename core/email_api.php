@@ -1306,8 +1306,7 @@ function email_send( EmailData $p_email_data ) {
 			break;
 	}
 
-	$t_mail->IsHTML( false );              # set email format to plain text
-	$t_mail->WordWrap = 80;              # set word wrap to 80 characters
+	$t_mail->IsHTML( true );              # set email format to plain text
 	$t_mail->CharSet = $t_email_data->metadata['charset'];
 	$t_mail->Host = config_get( 'smtp_host' );
 	$t_mail->From = config_get( 'from_email' );
@@ -1317,7 +1316,7 @@ function email_send( EmailData $p_email_data ) {
 	$t_mail->AddCustomHeader( 'X-Auto-Response-Suppress: All' );
 
 	# Setup new line and encoding to avoid extra new lines with some smtp gateways like sendgrid.net
-	$t_mail->LE         = "\r\n";
+	# $t_mail->LE         = "\r\n";
 	$t_mail->Encoding   = 'quoted-printable';
 
 	if( isset( $t_email_data->metadata['priority'] ) ) {
@@ -1682,9 +1681,9 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 	$t_normal_date_format = config_get( 'normal_date_format' );
 	$t_complete_date_format = config_get( 'complete_date_format' );
 
-	$t_email_separator1 = config_get( 'email_separator1' );
-	$t_email_separator2 = config_get( 'email_separator2' );
-	$t_email_padding_length = config_get( 'email_padding_length' );
+	$t_email_separator = '<hr />';
+	$t_nl = "<br />\n";
+	$t_message = '';
 
 	$t_status = $p_visible_bug_data['email_status'];
 
@@ -1696,18 +1695,20 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 	$p_visible_bug_data['email_priority'] = get_enum_element( 'priority', $p_visible_bug_data['email_priority'] );
 	$p_visible_bug_data['email_reproducibility'] = get_enum_element( 'reproducibility', $p_visible_bug_data['email_reproducibility'] );
 
-	$t_message = $t_email_separator1 . " \n";
-
 	if( isset( $p_visible_bug_data['email_bug_view_url'] ) ) {
-		$t_message .= $p_visible_bug_data['email_bug_view_url'] . " \n";
-		$t_message .= $t_email_separator1 . " \n";
+		$t_summary_prefix = '<h2><a href="' . $p_visible_bug_data['email_bug_view_url'] . '">';
+		$t_summary_suffix = '</a></h2>';
+	} else {
+		$t_summary_prefix = '<h2>';
+		$t_summary_suffix = '</h2>';
 	}
 
+	$t_message .= $t_summary_prefix . $p_visible_bug_data['email_bug'] . ': ' . string_display_line_links( $p_visible_bug_data['email_summary'] ) . $t_summary_suffix . "\n";
+
+	$t_message .= '<table border="1" cellpadding="5" cellspacing="0">' . "\n";
 	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_reporter' );
 	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_handler' );
-	$t_message .= $t_email_separator1 . " \n";
 	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_project' );
-	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_bug' );
 	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_category' );
 
 	if( isset( $p_visible_bug_data['email_tag'] ) ) {
@@ -1722,9 +1723,9 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 
 	# custom fields formatting
 	foreach( $p_visible_bug_data['custom_fields'] as $t_custom_field_name => $t_custom_field_data ) {
-		$t_message .= utf8_str_pad( lang_get_defaulted( $t_custom_field_name, null ) . ': ', $t_email_padding_length, ' ', STR_PAD_RIGHT );
+		$t_message .= '<tr valign="top"><td><b>' . lang_get_defaulted( $t_custom_field_name, null ) . '</b></td><td colspan="3">';
 		$t_message .= string_custom_field_value_for_email( $t_custom_field_data['value'], $t_custom_field_data['type'] );
-		$t_message .= " \n";
+		$t_message .= "</td></tr>\n";
 	}
 
 	# end foreach custom field
@@ -1734,7 +1735,6 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_resolution' );
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_fixed_in_version' );
 	}
-	$t_message .= $t_email_separator1 . " \n";
 
 	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_date_submitted' );
 	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_last_modified' );
@@ -1743,30 +1743,30 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_due_date' );
 	}
 
-	$t_message .= $t_email_separator1 . " \n";
-
-	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_summary' );
-
-	$t_message .= lang_get( 'email_description' ) . ": \n" . $p_visible_bug_data['email_description'] . "\n";
+	$t_message .= '<tr valign="top"><td><b>' . lang_get( 'email_description' ) . '</b></td><td colspan="3">' .
+		string_display_links( $p_visible_bug_data['email_description'] ) . "</td></tr>\n";
 
 	if( !is_blank( $p_visible_bug_data['email_steps_to_reproduce'] ) ) {
-		$t_message .= "\n" . lang_get( 'email_steps_to_reproduce' ) . ": \n" . $p_visible_bug_data['email_steps_to_reproduce'] . "\n";
+		$t_message .= '<tr valign="top"><td><b>' . lang_get( 'email_steps_to_reproduce' ) . '</b></td><td colspan="3">' .
+			string_display_links( $p_visible_bug_data['email_steps_to_reproduce'] ) . "</td></tr>\n";
 	}
 
 	if( !is_blank( $p_visible_bug_data['email_additional_information'] ) ) {
-		$t_message .= "\n" . lang_get( 'email_additional_information' ) . ": \n" . $p_visible_bug_data['email_additional_information'] . "\n";
+		$t_message .= '<tr valign="top"><td><b>' . lang_get( 'email_additional_information' ) . '</b></td><td colspan="3">' .
+			string_display_links( $p_visible_bug_data['email_additional_information'] ) . "</td></tr>\n";
 	}
 
 	if( isset( $p_visible_bug_data['relations'] ) ) {
 		if( $p_visible_bug_data['relations'] != '' ) {
-			$t_message .= $t_email_separator1 . "\n" . utf8_str_pad( lang_get( 'bug_relationships' ), 20 ) . utf8_str_pad( lang_get( 'id' ), 8 ) . lang_get( 'summary' ) . "\n" . $t_email_separator2 . "\n" . $p_visible_bug_data['relations'];
+			$t_message .= '<tr><td><b>' . lang_get( 'bug_relationships' ) . '</b></td><td><b>' .
+				lang_get( 'id' ) . '</b></td><td><b>' . lang_get( 'summary' ) . '</b></td></tr>' .
+				'<tr><td colspan="4">' . $p_visible_bug_data['relations'] . '</td></tr>';
 		}
 	}
 
 	# Sponsorship
 	if( isset( $p_visible_bug_data['sponsorship_total'] ) && ( $p_visible_bug_data['sponsorship_total'] > 0 ) ) {
-		$t_message .= $t_email_separator1 . " \n";
-		$t_message .= sprintf( lang_get( 'total_sponsorship_amount' ), sponsorship_format_amount( $p_visible_bug_data['sponsorship_total'] ) ) . "\n\n";
+		$t_message .= sprintf( lang_get( 'total_sponsorship_amount' ), sponsorship_format_amount( $p_visible_bug_data['sponsorship_total'] ) ) . $t_nl . $t_nl;
 
 		if( isset( $p_visible_bug_data['sponsorships'] ) ) {
 			foreach( $p_visible_bug_data['sponsorships'] as $t_sponsorship ) {
@@ -1774,34 +1774,33 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 
 				$t_message .= $t_date_added . ': ';
 				$t_message .= user_get_name( $t_sponsorship->user_id );
-				$t_message .= ' (' . sponsorship_format_amount( $t_sponsorship->amount ) . ')' . " \n";
+				$t_message .= ' (' . sponsorship_format_amount( $t_sponsorship->amount ) . ')' . $t_nl;
 			}
 		}
 	}
-
-	$t_message .= $t_email_separator1 . " \n\n";
 
 	# format bugnotes
 	foreach( $p_visible_bug_data['bugnotes'] as $t_bugnote ) {
 		# Show time tracking is always true, since data has already been filtered out when creating the bug visible data.
 		$t_message .= email_format_bugnote( $t_bugnote, $p_visible_bug_data['email_project_id'],
-				/* show_time_tracking */ true,  $t_email_separator2, $t_normal_date_format ) . "\n";
+				/* show_time_tracking */ true,  $t_email_separator,$t_normal_date_format ) . $t_nl;
 	}
 
 	# format history
 	if( array_key_exists( 'history', $p_visible_bug_data ) ) {
-		$t_message .= lang_get( 'bug_history' ) . " \n";
-		$t_message .= utf8_str_pad( lang_get( 'date_modified' ), 17 ) . utf8_str_pad( lang_get( 'username' ), 15 ) . utf8_str_pad( lang_get( 'field' ), 25 ) . utf8_str_pad( lang_get( 'change' ), 20 ) . " \n";
-
-		$t_message .= $t_email_separator1 . " \n";
+		$t_message .= '<tr><td colspan="4"><b>' . lang_get( 'bug_history' ) . "</b></td></tr>\n";
+		$t_message .= '<tr><td><b>' . lang_get( 'date_modified' ) . '</b></td><td><b>' .
+			lang_get( 'username' ) . '</b></td><td><b>' . lang_get( 'field' ) . '</b></td><td><b>' .
+			lang_get( 'change' ) . "</b></td></tr>\n";
 
 		foreach( $p_visible_bug_data['history'] as $t_raw_history_item ) {
 			$t_localized_item = history_localize_item( $t_raw_history_item['field'], $t_raw_history_item['type'], $t_raw_history_item['old_value'], $t_raw_history_item['new_value'], false );
 
-			$t_message .= utf8_str_pad( date( $t_normal_date_format, $t_raw_history_item['date'] ), 17 ) . utf8_str_pad( $t_raw_history_item['username'], 15 ) . utf8_str_pad( $t_localized_item['note'], 25 ) . utf8_str_pad( $t_localized_item['change'], 20 ) . "\n";
+			$t_message .= '<tr><td>' . date( $t_normal_date_format, $t_raw_history_item['date'] ) . '</td><td>' . $t_raw_history_item['username'] . '</td><td>' . $t_localized_item['note'] . '</td><td>' . $t_localized_item['change'] . "</td></tr>\n";
 		}
-		$t_message .= $t_email_separator1 . " \n\n";
 	}
+
+	$t_message .= '</table>';
 
 	return $t_message;
 }
@@ -1816,8 +1815,9 @@ function email_format_bug_message( array $p_visible_bug_data ) {
  */
 function email_format_attribute( array $p_visible_bug_data, $p_attribute_id ) {
 	if( array_key_exists( $p_attribute_id, $p_visible_bug_data ) ) {
-		return utf8_str_pad( lang_get( $p_attribute_id ) . ': ', config_get( 'email_padding_length' ), ' ', STR_PAD_RIGHT ) . $p_visible_bug_data[$p_attribute_id] . "\n";
+		return '<tr><td><b>' . lang_get( $p_attribute_id ) . '</b></td><td colspan="3">' . $p_visible_bug_data[$p_attribute_id] . '</td></tr>' . "\n";
 	}
+
 	return '';
 }
 
