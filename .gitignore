@@ -41,6 +41,9 @@ web.config
 library/FirePHPCore
 library/ezc
 
+# npm
+/node_modules/
+
 # Composer
 /vendor/
 composer.phar

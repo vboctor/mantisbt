@@ -17,7 +17,6 @@ utf8            | phputf8         | 0.5       | unpatched
 
 library / plugin                  | version   | status
 ----------------------------------|-----------|---------------
-jquery                            | 2.2.4     | unpatched
 bootstrap                         | 3.3.6     | unpatched
 fontawesome                       | 4.6.3     | unpatched
 ace-admin theme                   | 1.4.0     | customized
@@ -43,7 +42,6 @@ project         | URL
 ----------------|--------------------------------------------------------------------
 rssbuilder      | http://code.google.com/p/flaimo-php/
 utf8            | http://sourceforge.net/projects/phputf8
-jquery          | https://jquery.com/
 bootstrap       | http://getbootstrap.com/
 fontawesome     | http://fontawesome.io/
 moment.js       | https://momentjs.com/ - https://github.com/moment/moment/

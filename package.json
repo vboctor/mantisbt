@@ -1,0 +1,27 @@
+{
+  "name": "mantisbt",
+  "description": "Mantis Bug Tracker",
+  "directories": {
+    "doc": "docbook",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mantisbt/mantisbt.git"
+  },
+  "keywords": [
+    "mantisbt"
+  ],
+  "author": "MantisBT Team",
+  "license": "GPL-2.0",
+  "bugs": {
+    "url": "https://www.mantisbt.org/bugs/"
+  },
+  "homepage": "https://www.mantisbt.org/",
+  "dependencies": {
+    "jquery": "^2.2"
+  }
+}

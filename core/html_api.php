@@ -309,7 +309,7 @@ function html_head_javascript() {
 		html_javascript_cdn_link( 'https://cdnjs.cloudflare.com/ajax/libs/dropzone/' . DROPZONE_VERSION . '/min/dropzone.min.js', DROPZONE_HASH );
 	} else {
 		# JQuery
-		html_javascript_link( 'jquery-' . JQUERY_VERSION . '.min.js' );
+		html_javascript_link( 'node_modules/jquery/jquery-' . JQUERY_VERSION . '.min.js' );
 
 		# Dropzone
 		html_javascript_link( 'dropzone-' . DROPZONE_VERSION . '.min.js' );
