@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 # clone URL for MantisBT repository
-clone_url = 'https://github.com/mantisbt/mantisbt.git'
+clone_url = 'https://github.com/vboctor/mantisbt.git'
 
 build_script_name = 'buildrelease.py'
 
