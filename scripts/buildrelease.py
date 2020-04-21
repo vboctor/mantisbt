@@ -23,6 +23,12 @@ exclude_list = (
     ".mailmap",
     ".travis.yml",
     "build.xml",
+	"buildrelease.py",
+	"buildrelease-repo.py",
+	"docbook-manual.py",
+	"docbook-manual-repo.py",
+	"travis_before_script.sh",
+	"travis_script.sh",
     # User custom files
     "config_inc.php",
     "custom_constant*_inc.php",
