@@ -20,7 +20,7 @@ php -q ./scripts/check_lineterm.php -c
 ### Tag the release
 
 These steps typically happen from the machine used for official buids which
-has the tools like gpg, gpg key, zip, tar, and tool chain needed to build docbook.
+has the tools like gpg, gpg key, zip, tar, md5sum, sha1sum, and publican.
 
 To setup a machine for official build, see instructions at
 [Release Process](http://www.mantisbt.org/wiki/doku.php/mantisbt:release_process).
