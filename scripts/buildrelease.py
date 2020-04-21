@@ -29,6 +29,9 @@ exclude_list = (
 	"docbook-manual-repo.py",
 	"travis_before_script.sh",
 	"travis_script.sh",
+	"composer.json",
+	"composer.lock",
+	"test_langs.php",
     # User custom files
     "config_inc.php",
     "custom_constant*_inc.php",
