@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 # clone URL for MantisBT repository
-clone_url = 'git://github.com/mantisbt/mantisbt.git'
+clone_url = 'https://github.com/mantisbt/mantisbt.git'
 
 # Absolute path to buildrelease.py
 buildscript = path.dirname(path.abspath(__file__)) + '/buildrelease.py'
